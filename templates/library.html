@@ -1,98 +1,102 @@
 {% extends "base.html" %}
 {% block title %}Skill Library{% endblock %}
 {% block content %}
-  <section class="section-heading compact-heading">
-    <p class="eyebrow">Module 2</p>
+  <section class="library-hero">
     <h1>Skill Library</h1>
-    <p>Search, use, and evaluate reusable research skills.</p>
+    <p>Find reusable research skills.</p>
+    <div class="library-search-row">
+      <input id="skillSearch" type="search" placeholder="Search skills..." aria-label="Search skills">
+      <button class="filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">Filters</button>
+    </div>
+    <section class="filter-panel" id="filterPanel" hidden>
+      <label>
+        <span>Research Type</span>
+        <select id="researchTypeFilter">
+          <option value="">All</option>
+          {% for research_type in research_types %}
+            <option value="{{ research_type }}">{{ research_type }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Validation Status</span>
+        <select id="validationStatusFilter">
+          <option value="">All</option>
+          {% for status in validation_statuses %}
+            <option value="{{ status }}">{{ status }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Input Type</span>
+        <select id="inputTypeFilter">
+          <option value="">All</option>
+          {% for input_type in input_types %}
+            <option value="{{ input_type }}">{{ input_type }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Output Type</span>
+        <select id="outputTypeFilter">
+          <option value="">All</option>
+          {% for output_type in output_types %}
+            <option value="{{ output_type }}">{{ output_type }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </section>
   </section>
 
-  <section class="library-controls" aria-label="Skill library filters">
-    <label class="search-field">
-      <span>Search skills</span>
-      <input id="skillSearch" type="search" placeholder="Search by name, type, author, or description">
-    </label>
-    <label>
-      <span>Research Type</span>
-      <select id="researchTypeFilter">
-        <option value="">All research types</option>
-        {% for research_type in research_types %}
-          <option value="{{ research_type }}">{{ research_type }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>
-      <span>Validation Status</span>
-      <select id="validationStatusFilter">
-        <option value="">All statuses</option>
-        {% for status in validation_statuses %}
-          <option value="{{ status }}">{{ status }}</option>
-        {% endfor %}
-      </select>
-    </label>
+  <section class="library-section">
+    <h2>Featured Skills</h2>
+    <div class="simple-skill-grid" aria-live="polite">
+      {% for skill in featured_skills %}
+        {% include "partials/simple_skill_card.html" %}
+      {% endfor %}
+    </div>
   </section>
 
-  <section class="skill-card-grid" id="skillGrid" aria-live="polite">
-    {% for skill in skills %}
-      <article
-        class="skill-card"
-        data-search="{{ (skill.name ~ ' ' ~ skill.research_type ~ ' ' ~ skill.description ~ ' ' ~ skill.author ~ ' ' ~ skill.input_type ~ ' ' ~ skill.output_type)|lower }}"
-        data-research-type="{{ skill.research_type }}"
-        data-validation-status="{{ skill.validation_status }}"
-      >
-        <div class="skill-card-header">
-          <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
-          <span class="version">v{{ skill.version }}</span>
-        </div>
-        <h2>{{ skill.name }}</h2>
-        <p>{{ skill.description }}</p>
-        <dl class="skill-facts">
-          <div>
-            <dt>Research type</dt>
-            <dd>{{ skill.research_type }}</dd>
-          </div>
-          <div>
-            <dt>Input</dt>
-            <dd>{{ skill.input_type }}</dd>
-          </div>
-          <div>
-            <dt>Output</dt>
-            <dd>{{ skill.output_type }}</dd>
-          </div>
-          <div>
-            <dt>Author</dt>
-            <dd>{{ skill.author }}</dd>
-          </div>
-        </dl>
-        <div class="card-actions">
-          <a class="secondary-action" href="{{ skill.detail_href }}">View Details</a>
-          <a class="primary-action" href="{{ skill.use_href }}">Use Skill</a>
-          <a class="text-action" href="{{ skill.comment_href }}">Comment</a>
-        </div>
-      </article>
-    {% endfor %}
+  <section class="library-section">
+    <h2>All Skills</h2>
+    <div class="simple-skill-grid" id="skillGrid" aria-live="polite">
+      {% for skill in skills %}
+        {% include "partials/simple_skill_card.html" %}
+      {% endfor %}
+    </div>
+    <p class="empty-state" id="emptyState" hidden>No skills match the current search and filters.</p>
   </section>
-
-  <p class="empty-state" id="emptyState" hidden>No skills match the current search and filters.</p>
 
   <script>
-    const searchInput = document.getElementById("skillSearch");
-    const researchTypeFilter = document.getElementById("researchTypeFilter");
-    const validationStatusFilter = document.getElementById("validationStatusFilter");
-    const skillCards = Array.from(document.querySelectorAll(".skill-card"));
+    const filterToggle = document.getElementById("filterToggle");
+    const filterPanel = document.getElementById("filterPanel");
+    const controls = {
+      search: document.getElementById("skillSearch"),
+      researchType: document.getElementById("researchTypeFilter"),
+      validationStatus: document.getElementById("validationStatusFilter"),
+      inputType: document.getElementById("inputTypeFilter"),
+      outputType: document.getElementById("outputTypeFilter"),
+    };
+    const skillCards = Array.from(document.querySelectorAll("#skillGrid .simple-skill-card"));
     const emptyState = document.getElementById("emptyState");
 
+    filterToggle.addEventListener("click", () => {
+      const expanded = filterToggle.getAttribute("aria-expanded") === "true";
+      filterToggle.setAttribute("aria-expanded", String(!expanded));
+      filterPanel.hidden = expanded;
+    });
+
     function filterSkills() {
-      const query = searchInput.value.trim().toLowerCase();
-      const researchType = researchTypeFilter.value;
-      const validationStatus = validationStatusFilter.value;
+      const query = controls.search.value.trim().toLowerCase();
       let visibleCount = 0;
 
       skillCards.forEach((card) => {
-        const matchesSearch = !query || card.dataset.search.includes(query);
-        const matchesType = !researchType || card.dataset.researchType === researchType;
-        const matchesStatus = !validationStatus || card.dataset.validationStatus === validationStatus;
-        const isVisible = matchesSearch && matchesType && matchesStatus;
+        const isVisible =
+          (!query || card.dataset.search.includes(query)) &&
+          (!controls.researchType.value || card.dataset.researchType === controls.researchType.value) &&
+          (!controls.validationStatus.value || card.dataset.validationStatus === controls.validationStatus.value) &&
+          (!controls.inputType.value || card.dataset.inputType === controls.inputType.value) &&
+          (!controls.outputType.value || card.dataset.outputType === controls.outputType.value);
         card.hidden = !isVisible;
         if (isVisible) visibleCount += 1;
       });
@@ -100,7 +104,7 @@
       emptyState.hidden = visibleCount !== 0;
     }
 
-    [searchInput, researchTypeFilter, validationStatusFilter].forEach((control) => {
+    Object.values(controls).forEach((control) => {
       control.addEventListener("input", filterSkills);
       control.addEventListener("change", filterSkills);
     });

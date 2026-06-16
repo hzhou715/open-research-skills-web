@@ -35,7 +35,7 @@ MODULES = [
     {
         "name": "Skill Library",
         "slug": "library",
-        "label": "Skill Library",
+        "label": "Library",
         "summary": "Browse executable methods and examples.",
     },
     {
@@ -47,7 +47,7 @@ MODULES = [
     {
         "name": "Demo / Education Videos",
         "slug": "videos",
-        "label": "Demo / Learn",
+        "label": "Education",
         "summary": "Host short walkthroughs and teaching notes.",
     },
     {
@@ -290,13 +290,20 @@ def index():
 @app.route("/library")
 def library():
     skills = all_library_skills()
+    featured_ids = {"npv-dcf", "bidding-collusion-coding", "literature-screening-theme-coding"}
+    featured_skills = [skill for skill in skills if skill["id"] in featured_ids]
     research_types = sorted({skill["research_type"] for skill in skills})
     validation_statuses = sorted({skill["validation_status"] for skill in skills})
+    input_types = sorted({skill["input_type"] for skill in skills})
+    output_types = sorted({skill["output_type"] for skill in skills})
     return render_template(
         "library.html",
         skills=skills,
+        featured_skills=featured_skills,
         research_types=research_types,
         validation_statuses=validation_statuses,
+        input_types=input_types,
+        output_types=output_types,
     )
 
 

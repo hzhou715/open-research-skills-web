@@ -12,12 +12,26 @@ class SkillLibraryTests(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Search, use, and evaluate reusable research skills.", body)
+        self.assertIn("Find reusable research skills.", body)
+        self.assertIn("Featured Skills", body)
+        self.assertIn("All Skills", body)
         self.assertIn("skillSearch", body)
         self.assertIn("Research Type", body)
         self.assertIn("Validation Status", body)
+        self.assertIn("Input Type", body)
+        self.assertIn("Output Type", body)
         for skill in SAMPLE_SKILLS:
             self.assertIn(skill["name"], body)
+
+    def test_library_cards_use_one_primary_action(self):
+        response = self.client.get("/library")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Open Skill", body)
+        self.assertNotIn("View Details", body)
+        self.assertNotIn("Use Skill", body)
+        self.assertNotIn(">Comment</a>", body)
 
     def test_sample_skill_detail_pages_render_required_sections(self):
         required_sections = [

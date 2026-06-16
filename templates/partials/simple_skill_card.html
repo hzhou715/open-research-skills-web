@@ -1,0 +1,15 @@
+<article
+  class="simple-skill-card"
+  data-search="{{ (skill.name ~ ' ' ~ skill.research_type ~ ' ' ~ skill.description ~ ' ' ~ skill.author ~ ' ' ~ skill.input_type ~ ' ' ~ skill.output_type)|lower }}"
+  data-research-type="{{ skill.research_type }}"
+  data-validation-status="{{ skill.validation_status }}"
+  data-input-type="{{ skill.input_type }}"
+  data-output-type="{{ skill.output_type }}"
+>
+  <div>
+    <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
+    <h3>{{ skill.name }}</h3>
+    <p>{{ skill.description }}</p>
+  </div>
+  <a class="primary-action" href="{{ skill.detail_href }}">Open Skill</a>
+</article>
