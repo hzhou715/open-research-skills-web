@@ -6,7 +6,9 @@ __pycache__/
 storage/uploads/*
 storage/results/*
 storage/skills/*
+uploads/submitted_skills/*
 !storage/uploads/.gitkeep
 !storage/results/.gitkeep
 !storage/skills/.gitkeep
 !storage/skills/skills.json
+!uploads/submitted_skills/.gitkeep

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Submission Confirmed{% endblock %}
+{% block content %}
+  <section class="confirmation-card">
+    <p class="eyebrow">Submission Complete</p>
+    <h1>Your skill has been submitted successfully.</h1>
+    <dl class="confirmation-list">
+      <div>
+        <dt>Skill name</dt>
+        <dd>{{ skill.name }}</dd>
+      </div>
+      <div>
+        <dt>Author</dt>
+        <dd>{{ skill.author }}</dd>
+      </div>
+      <div>
+        <dt>Research type</dt>
+        <dd>{{ skill.research_type }}</dd>
+      </div>
+      <div>
+        <dt>Submitted status</dt>
+        <dd>{{ skill.status }}</dd>
+      </div>
+    </dl>
+    <section class="uploaded-files">
+      <h2>Uploaded files</h2>
+      {% if skill.files %}
+        <div class="file-list">
+          {% for file in skill.files %}
+            <span class="file-pill">{{ file.filename }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No files uploaded.</p>
+      {% endif %}
+    </section>
+    <div class="card-actions">
+      <a class="primary-action" href="{{ url_for('library_skill_detail', skill_id=skill.id) }}">View Library Item</a>
+      <a class="secondary-action" href="{{ url_for('publish') }}">Submit Another Skill</a>
+    </div>
+  </section>
+{% endblock %}

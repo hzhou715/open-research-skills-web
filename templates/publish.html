@@ -1,51 +1,163 @@
 {% extends "base.html" %}
-{% block title %}Publish Skills{% endblock %}
+{% block title %}Publish / Contribute Skills{% endblock %}
 {% block content %}
-  <section class="section-heading">
+  <section class="section-heading compact-heading">
     <p class="eyebrow">Module 1</p>
     <h1>Publish / Contribute Skills</h1>
-    <p>Prepare research skills for review and reuse.</p>
+    <p>Submit a reusable research skill package for AI-assisted research.</p>
   </section>
-  <div class="module-layout publish-layout">
-    <aside class="module-sidebar publish-sidebar">
-      <span>Submission</span>
-      <strong>Contributor-ready</strong>
-      <p>Saved skills appear in the library immediately.</p>
+
+  <p class="module-note">A research skill should define one research-process task with clear inputs, procedure, outputs, and validation standards.</p>
+
+  <div class="publish-layout-full">
+    <aside class="publish-checklist">
+      <span>Before publishing</span>
+      <p>Make sure your skill package includes:</p>
+      <ul>
+        <li>SKILL.md</li>
+        <li>Input requirements</li>
+        <li>Output schema</li>
+        <li>Decision rules</li>
+        <li>Example input</li>
+        <li>Validation standard</li>
+      </ul>
+      <a class="text-action" href="{{ url_for('my_submitted_skills') }}">My Submitted Skills</a>
     </aside>
-    <form class="publish-form" method="post" enctype="multipart/form-data">
-      <div class="form-grid">
+
+    <form class="publish-form advanced-publish-form" method="post" enctype="multipart/form-data">
+      <section class="form-section-card">
+        <h2>Basic Skill Information</h2>
+        <div class="form-grid two-col">
+          <label>
+            <span>Skill Name</span>
+            <input type="text" name="name" value="{{ form_data.get('name', '') }}" required>
+            {% if errors.get('name') %}<em>{{ errors.name }}</em>{% endif %}
+          </label>
+          <label>
+            <span>Research Type</span>
+            <input type="text" name="research_type" value="{{ form_data.get('research_type', '') }}" placeholder="Example: Literature Review">
+          </label>
+        </div>
         <label>
-          <span>Skill name</span>
-          <input type="text" name="name" required placeholder="Example: Systematic Review Screener">
+          <span>Short Description</span>
+          <textarea name="description" rows="3" required>{{ form_data.get('description', '') }}</textarea>
+          {% if errors.get('description') %}<em>{{ errors.description }}</em>{% endif %}
         </label>
+        <div class="form-grid three-col">
+          <label>
+            <span>Author Name</span>
+            <input type="text" name="author" value="{{ form_data.get('author', '') }}">
+          </label>
+          <label>
+            <span>Institution</span>
+            <input type="text" name="institution" value="{{ form_data.get('institution', '') }}">
+          </label>
+          <label>
+            <span>Contact Email</span>
+            <input type="email" name="contact_email" value="{{ form_data.get('contact_email', '') }}">
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section-card">
+        <h2>Research Source</h2>
+        <div class="form-grid two-col">
+          <label>
+            <span>Related Paper Title</span>
+            <input type="text" name="related_paper_title" value="{{ form_data.get('related_paper_title', '') }}">
+          </label>
+          <label>
+            <span>DOI / URL</span>
+            <input type="text" name="doi_url" value="{{ form_data.get('doi_url', '') }}">
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section-card">
+        <h2>Skill Structure</h2>
+        <div class="form-grid two-col">
+          <label>
+            <span>Purpose</span>
+            <textarea name="purpose" rows="4">{{ form_data.get('purpose', '') }}</textarea>
+          </label>
+          <label>
+            <span>Required Inputs</span>
+            <textarea name="required_inputs" rows="4">{{ form_data.get('required_inputs', '') }}</textarea>
+          </label>
+          <label>
+            <span>Expected Outputs</span>
+            <textarea name="expected_outputs" rows="4">{{ form_data.get('expected_outputs', '') }}</textarea>
+          </label>
+          <label>
+            <span>Procedure Summary</span>
+            <textarea name="procedure_summary" rows="4">{{ form_data.get('procedure_summary', '') }}</textarea>
+          </label>
+          <label>
+            <span>Decision Rules</span>
+            <textarea name="decision_rules" rows="4">{{ form_data.get('decision_rules', '') }}</textarea>
+          </label>
+          <label>
+            <span>Validation Standard</span>
+            <textarea name="validation_standard" rows="4">{{ form_data.get('validation_standard', '') }}</textarea>
+          </label>
+        </div>
         <label>
-          <span>Author</span>
-          <input type="text" name="author" placeholder="Name or lab">
+          <span>Known Limitations</span>
+          <textarea name="known_limitations" rows="3">{{ form_data.get('known_limitations', '') }}</textarea>
         </label>
-        <label>
-          <span>Version</span>
-          <input type="text" name="version" value="0.1">
-        </label>
-      </div>
-      <label>
-        <span>Description</span>
-        <textarea name="description" rows="3" required placeholder="What does this skill do?"></textarea>
-      </label>
-      <div class="form-grid">
-        <label>
-          <span>Inputs</span>
-          <textarea name="inputs" rows="4" placeholder="Required files, fields, or assumptions"></textarea>
-        </label>
-        <label>
-          <span>Outputs</span>
-          <textarea name="outputs" rows="4" placeholder="Generated files, reports, or metrics"></textarea>
-        </label>
-      </div>
-      <label>
-        <span>Skill files</span>
-        <input type="file" name="skill_files" multiple>
-      </label>
-      <button type="submit">Save to Library</button>
+      </section>
+
+      <section class="form-section-card">
+        <h2>File Uploads</h2>
+        <p>Upload SKILL.md and supporting examples.</p>
+        <div class="form-grid two-col">
+          <label>
+            <span>SKILL.md</span>
+            <input type="file" name="skill_md" accept=".md" required>
+            {% if errors.get('skill_md') %}<em>{{ errors.skill_md }}</em>{% endif %}
+          </label>
+          <label>
+            <span>Sample input files</span>
+            <input type="file" name="sample_input_files" multiple>
+          </label>
+          <label>
+            <span>Expected output files</span>
+            <input type="file" name="expected_output_files" multiple>
+          </label>
+          <label>
+            <span>Reference files</span>
+            <input type="file" name="reference_files" multiple>
+          </label>
+          <label>
+            <span>Validation report</span>
+            <input type="file" name="validation_report">
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section-card">
+        <h2>Publication Status</h2>
+        <div class="form-grid two-col">
+          <label>
+            <span>Skill Status</span>
+            <select name="skill_status">
+              {% for option in ["Draft", "Validated"] %}
+                <option value="{{ option }}" {% if form_data.get('skill_status', 'Draft') == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Visibility</span>
+            <select name="visibility">
+              {% for option in ["Private Draft", "Public", "Team Only"] %}
+                <option value="{{ option }}" {% if form_data.get('visibility', 'Private Draft') == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <button type="submit">Submit Skill Package</button>
     </form>
   </div>
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}My Submitted Skills{% endblock %}
+{% block content %}
+  <section class="section-heading compact-heading">
+    <p class="eyebrow">Placeholder</p>
+    <h1>My Submitted Skills</h1>
+    <p>A future account view for tracking submitted research skills.</p>
+  </section>
+
+  <section class="skill-card-grid">
+    {% for skill in skills %}
+      <article class="skill-card">
+        <div class="skill-card-header">
+          <span class="badge status-{{ skill.validation_status|lower }}">{{ skill.validation_status }}</span>
+          <span class="version">{{ skill.visibility }}</span>
+        </div>
+        <h2>{{ skill.name }}</h2>
+        <p>{{ skill.description }}</p>
+        <div class="card-actions">
+          <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id=skill.id) }}">View Details</a>
+        </div>
+      </article>
+    {% else %}
+      <p class="empty-state">No submitted skills yet.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

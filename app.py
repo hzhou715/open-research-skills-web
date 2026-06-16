@@ -1,6 +1,7 @@
 import os
 import json
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -15,6 +16,9 @@ UPLOAD_DIR = BASE_DIR / "storage" / "uploads"
 RESULT_DIR = BASE_DIR / "storage" / "results"
 SKILL_DIR = BASE_DIR / "storage" / "skills"
 SKILL_INDEX = SKILL_DIR / "skills.json"
+DATA_DIR = BASE_DIR / "data"
+SUBMITTED_SKILLS_INDEX = DATA_DIR / "submitted_skills.json"
+SUBMITTED_SKILLS_UPLOAD_DIR = BASE_DIR / "uploads" / "submitted_skills"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-mvp-secret-key"
@@ -31,7 +35,7 @@ MODULES = [
     {
         "name": "Skill Library",
         "slug": "library",
-        "label": "Library",
+        "label": "Skill Library",
         "summary": "Browse executable methods and examples.",
     },
     {
@@ -43,7 +47,7 @@ MODULES = [
     {
         "name": "Demo / Education Videos",
         "slug": "videos",
-        "label": "Education",
+        "label": "Demo / Learn",
         "summary": "Host short walkthroughs and teaching notes.",
     },
     {
@@ -152,6 +156,58 @@ def save_upload(field: str, run_dir: Path, required: bool = True) -> Path | None
     return path
 
 
+def safe_folder_name(name: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", name.strip().lower()).strip("-")
+    return cleaned or "submitted-skill"
+
+
+def load_submitted_skills() -> list[dict[str, str]]:
+    if not SUBMITTED_SKILLS_INDEX.exists():
+        return []
+    try:
+        return json.loads(SUBMITTED_SKILLS_INDEX.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+
+
+def save_submitted_skills(skills: list[dict[str, str]]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    SUBMITTED_SKILLS_INDEX.write_text(json.dumps(skills, indent=2), encoding="utf-8")
+
+
+def submitted_skill_folder(skill_name: str) -> tuple[str, Path]:
+    base_name = safe_folder_name(skill_name)
+    folder_name = base_name
+    counter = 2
+    while (SUBMITTED_SKILLS_UPLOAD_DIR / folder_name).exists():
+        folder_name = f"{base_name}-{counter}"
+        counter += 1
+    folder = SUBMITTED_SKILLS_UPLOAD_DIR / folder_name
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder_name, folder
+
+
+def save_publish_files(folder: Path) -> list[dict[str, str]]:
+    saved_files: list[dict[str, str]] = []
+    upload_fields = [
+        "skill_md",
+        "sample_input_files",
+        "expected_output_files",
+        "reference_files",
+        "validation_report",
+    ]
+    for field in upload_fields:
+        for uploaded in request.files.getlist(field):
+            if uploaded.filename == "":
+                continue
+            filename = secure_filename(uploaded.filename)
+            if not filename:
+                continue
+            uploaded.save(folder / filename)
+            saved_files.append({"field": field, "filename": filename})
+    return saved_files
+
+
 def load_contributed_skills() -> list[dict[str, str]]:
     if not SKILL_INDEX.exists():
         return []
@@ -197,6 +253,7 @@ def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[st
         "validation_standard": skill.get("validation_standard") or "Validation standard not yet specified.",
         "example_files": skill.get("example_files", []),
         "files": skill.get("files", []),
+        "folder": skill.get("folder", ""),
         "created_at": skill.get("created_at", "Sample"),
         "contributed": contributed,
         "executable": skill.get("executable", False),
@@ -212,7 +269,8 @@ def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[st
 def all_library_skills() -> list[dict[str, str]]:
     sample_skills = [normalize_skill(skill) for skill in SAMPLE_SKILLS]
     contributed = [normalize_skill(skill, contributed=True) for skill in load_contributed_skills()]
-    return sample_skills + contributed
+    submitted = [normalize_skill(skill, contributed=True) for skill in load_submitted_skills()]
+    return sample_skills + contributed + submitted
 
 
 def find_library_skill(skill_id: str) -> dict[str, str] | None:
@@ -273,40 +331,74 @@ def validation():
 @app.route("/publish", methods=["GET", "POST"])
 def publish():
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        description = request.form.get("description", "").strip()
-        author = request.form.get("author", "").strip() or "Anonymous"
-        version = request.form.get("version", "").strip() or "0.1"
-        inputs = request.form.get("inputs", "").strip()
-        outputs = request.form.get("outputs", "").strip()
+        form_data = request.form.to_dict()
+        name = form_data.get("name", "").strip()
+        description = form_data.get("description", "").strip()
+        skill_md = request.files.get("skill_md")
+        errors: dict[str, str] = {}
 
-        if not name or not description:
-            flash("Skill name and description are required.", "error")
-            return redirect(url_for("publish"))
+        if not name:
+            errors["name"] = "Skill Name is required."
+        if not description:
+            errors["description"] = "Short Description is required."
+        if skill_md is None or skill_md.filename == "":
+            errors["skill_md"] = "SKILL.md upload is required."
+        elif secure_filename(skill_md.filename).lower() != "skill.md":
+            errors["skill_md"] = "Upload a file named SKILL.md."
 
-        skill_id = datetime.utcnow().strftime("%Y%m%d%H%M%S") + "-" + uuid4().hex[:8]
-        files = save_skill_files(skill_id)
+        if errors:
+            return render_template("publish.html", errors=errors, form_data=form_data), 400
+
+        folder_name, folder = submitted_skill_folder(name)
+        files = save_publish_files(folder)
+        submitted_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         skill = {
-            "id": skill_id,
+            "id": folder_name,
             "name": name,
             "description": description,
-            "author": author,
-            "version": version,
-            "research_type": "Contributed Skill",
-            "validation_status": "Draft",
-            "inputs": inputs,
-            "outputs": outputs,
-            "status": "Submitted",
-            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "short_description": description,
+            "author": form_data.get("author", "").strip() or "Anonymous",
+            "institution": form_data.get("institution", "").strip(),
+            "contact_email": form_data.get("contact_email", "").strip(),
+            "related_paper_title": form_data.get("related_paper_title", "").strip(),
+            "doi_url": form_data.get("doi_url", "").strip(),
+            "research_type": form_data.get("research_type", "").strip() or "Contributed Skill",
+            "purpose": form_data.get("purpose", "").strip(),
+            "input_type": form_data.get("required_inputs", "").strip() or "User-defined inputs",
+            "output_type": form_data.get("expected_outputs", "").strip() or "User-defined outputs",
+            "procedure": form_data.get("procedure_summary", "").strip(),
+            "decision_rules": form_data.get("decision_rules", "").strip(),
+            "validation_standard": form_data.get("validation_standard", "").strip(),
+            "known_limitations": form_data.get("known_limitations", "").strip(),
+            "validation_status": form_data.get("skill_status", "Draft"),
+            "visibility": form_data.get("visibility", "Private Draft"),
+            "status": form_data.get("skill_status", "Draft"),
+            "version": "0.1",
+            "created_at": submitted_at,
+            "submitted_at": submitted_at,
+            "folder": folder_name,
             "files": files,
         }
-        skills = load_contributed_skills()
+        skills = load_submitted_skills()
         skills.insert(0, skill)
-        save_contributed_skills(skills)
-        flash("Skill saved to the library.", "success")
-        return redirect(url_for("library_skill_detail", skill_id=skill_id))
+        save_submitted_skills(skills)
+        return redirect(url_for("submission_confirmation", skill_id=folder_name))
 
-    return render_template("publish.html")
+    return render_template("publish.html", errors={}, form_data={})
+
+
+@app.route("/publish/confirmation/<skill_id>")
+def submission_confirmation(skill_id: str):
+    skill = next((item for item in load_submitted_skills() if item["id"] == skill_id), None)
+    if skill is None:
+        flash("Submission not found.", "error")
+        return redirect(url_for("publish"))
+    return render_template("submission_confirmation.html", skill=skill)
+
+
+@app.route("/my-submitted-skills")
+def my_submitted_skills():
+    return render_template("my_submitted_skills.html", skills=load_submitted_skills())
 
 
 @app.route("/library/skills/<skill_id>")
@@ -379,6 +471,13 @@ def skill_file(skill_id: str, filename: str):
     safe_skill_id = secure_filename(skill_id)
     safe_filename = secure_filename(filename)
     return send_from_directory(SKILL_DIR / safe_skill_id / "files", safe_filename, as_attachment=True)
+
+
+@app.route("/uploads/submitted_skills/<skill_id>/<filename>")
+def submitted_skill_file(skill_id: str, filename: str):
+    safe_skill_id = secure_filename(skill_id)
+    safe_filename = secure_filename(filename)
+    return send_from_directory(SUBMITTED_SKILLS_UPLOAD_DIR / safe_skill_id, safe_filename, as_attachment=True)
 
 
 @app.route("/videos")

@@ -279,6 +279,77 @@ a {
   margin-bottom: 18px;
 }
 
+.module-note {
+  max-width: 860px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--muted);
+}
+
+.publish-layout-full {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.publish-checklist,
+.form-section-card,
+.confirmation-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.publish-checklist {
+  position: sticky;
+  top: 86px;
+  padding: 20px;
+}
+
+.publish-checklist span {
+  display: block;
+  color: var(--publish);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.publish-checklist p {
+  margin: 8px 0 10px;
+  color: var(--muted);
+}
+
+.publish-checklist ul {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  color: var(--text);
+}
+
+.publish-checklist li {
+  margin: 5px 0;
+}
+
+.form-section-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.form-section-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.form-section-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .library-controls {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) 220px 220px;
@@ -646,6 +717,7 @@ a {
 }
 
 .publish-form input,
+.publish-form select,
 .publish-form textarea,
 .upload-form input {
   width: 100%;
@@ -658,6 +730,67 @@ a {
 
 .publish-form textarea {
   resize: vertical;
+}
+
+.publish-form em {
+  color: var(--error);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.three-col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.confirmation-card {
+  max-width: 860px;
+  padding: 26px;
+}
+
+.confirmation-card h1 {
+  margin: 0 0 18px;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.08;
+}
+
+.confirmation-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.confirmation-list div,
+.uploaded-files {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.confirmation-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.confirmation-list dd {
+  margin: 4px 0 0;
+  font-weight: 750;
+}
+
+.uploaded-files {
+  margin-bottom: 18px;
+}
+
+.uploaded-files h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
 }
 
 .detail-stack {
@@ -762,6 +895,7 @@ th {
   }
 
   .module-layout,
+  .publish-layout-full,
   .library-controls,
   .detail-hero,
   .metadata-strip {
@@ -786,6 +920,9 @@ th {
   .summary-grid,
   .card-grid,
   .form-grid,
+  .two-col,
+  .three-col,
+  .confirmation-list,
   .skill-card-grid,
   .skill-facts,
   .detail-grid {

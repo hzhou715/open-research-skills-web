@@ -65,7 +65,11 @@
       {% elif skill.files %}
         <div class="file-list">
           {% for file in skill.files %}
-            <a class="secondary-action" href="{{ url_for('skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
+            {% if skill.folder %}
+              <a class="secondary-action" href="{{ url_for('submitted_skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
+            {% else %}
+              <a class="secondary-action" href="{{ url_for('skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
+            {% endif %}
           {% endfor %}
         </div>
       {% else %}

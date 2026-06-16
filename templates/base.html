@@ -10,6 +10,7 @@
     <header class="site-header">
       <a class="brand" href="{{ url_for('index') }}">Open Research Skills</a>
       <nav class="nav">
+        <a class="{% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Home</a>
         {% for module in modules %}
           <a class="{% if request.endpoint == module.slug %}active{% endif %}" href="{{ url_for(module.slug) }}">{{ module.label }}</a>
         {% endfor %}
