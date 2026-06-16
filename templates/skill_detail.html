@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ skill.name }}{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">{{ skill.status }}</p>
+    <h1>{{ skill.name }}</h1>
+    <p>{{ skill.description }}</p>
+  </section>
+
+  <div class="module-layout library-layout">
+    <aside class="module-sidebar library-sidebar">
+      <span>Library Item</span>
+      <strong>{{ skill.author }}</strong>
+      <p>Version {{ skill.version }} · {{ skill.created_at }}</p>
+    </aside>
+    <section class="detail-stack">
+      <article class="panel">
+        <h2>Inputs</h2>
+        <p>{{ skill.inputs or "No input specification provided." }}</p>
+      </article>
+      <article class="panel">
+        <h2>Outputs</h2>
+        <p>{{ skill.outputs or "No output specification provided." }}</p>
+      </article>
+      <article class="panel">
+        <h2>Files</h2>
+        {% if skill.files %}
+          <div class="file-list">
+            {% for file in skill.files %}
+              <a class="secondary-action" href="{{ url_for('skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>No files uploaded.</p>
+        {% endif %}
+      </article>
+    </section>
+  </div>
+{% endblock %}

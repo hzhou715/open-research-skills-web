@@ -117,7 +117,8 @@ a {
 
 .primary-action,
 .secondary-action,
-.upload-form button {
+.upload-form button,
+.publish-form button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +140,8 @@ a {
 }
 
 .primary-action:hover,
-.upload-form button:hover {
+.upload-form button:hover,
+.publish-form button:hover {
   background: var(--accent-dark);
   border-color: var(--accent-dark);
 }
@@ -160,6 +162,7 @@ a {
 .panel,
 .metric,
 .upload-form,
+.publish-form,
 .table-section,
 .notes,
 .module-sidebar {
@@ -302,6 +305,22 @@ a {
   box-shadow: var(--shadow);
 }
 
+.skill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.skill-meta span {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+}
+
 .panel {
   min-height: 132px;
   padding: 20px;
@@ -324,12 +343,28 @@ a {
   background: var(--soft);
 }
 
+.publish-form {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.publish-form label,
 .upload-form label {
   display: grid;
   gap: 8px;
   font-weight: 750;
 }
 
+.publish-form input,
+.publish-form textarea,
 .upload-form input {
   width: 100%;
   padding: 10px;
@@ -337,6 +372,21 @@ a {
   border-radius: 6px;
   background: #ffffff;
   font: inherit;
+}
+
+.publish-form textarea {
+  resize: vertical;
+}
+
+.detail-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .notes,
@@ -449,7 +499,8 @@ th {
 
   .module-grid,
   .summary-grid,
-  .card-grid {
+  .card-grid,
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }

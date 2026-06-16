@@ -10,21 +10,42 @@
     <aside class="module-sidebar publish-sidebar">
       <span>Submission</span>
       <strong>Contributor-ready</strong>
-      <p>Package method, data requirements, and expected outputs.</p>
+      <p>Saved skills appear in the library immediately.</p>
     </aside>
-    <section class="card-grid">
-      <article class="panel">
-        <h2>Metadata</h2>
-        <p>Name, scope, author, and version.</p>
-      </article>
-      <article class="panel">
-        <h2>Inputs</h2>
-        <p>Required files and assumptions.</p>
-      </article>
-      <article class="panel">
-        <h2>Outputs</h2>
-        <p>Results, reports, and validation examples.</p>
-      </article>
-    </section>
+    <form class="publish-form" method="post" enctype="multipart/form-data">
+      <div class="form-grid">
+        <label>
+          <span>Skill name</span>
+          <input type="text" name="name" required placeholder="Example: Systematic Review Screener">
+        </label>
+        <label>
+          <span>Author</span>
+          <input type="text" name="author" placeholder="Name or lab">
+        </label>
+        <label>
+          <span>Version</span>
+          <input type="text" name="version" value="0.1">
+        </label>
+      </div>
+      <label>
+        <span>Description</span>
+        <textarea name="description" rows="3" required placeholder="What does this skill do?"></textarea>
+      </label>
+      <div class="form-grid">
+        <label>
+          <span>Inputs</span>
+          <textarea name="inputs" rows="4" placeholder="Required files, fields, or assumptions"></textarea>
+        </label>
+        <label>
+          <span>Outputs</span>
+          <textarea name="outputs" rows="4" placeholder="Generated files, reports, or metrics"></textarea>
+        </label>
+      </div>
+      <label>
+        <span>Skill files</span>
+        <input type="file" name="skill_files" multiple>
+      </label>
+      <button type="submit">Save to Library</button>
+    </form>
   </div>
 {% endblock %}

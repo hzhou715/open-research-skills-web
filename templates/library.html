@@ -20,6 +20,11 @@
           <div class="status">{{ skill.status }}</div>
           <h2>{{ skill.name }}</h2>
           <p>{{ skill.description }}</p>
+          <div class="skill-meta">
+            <span>{{ skill.author }}</span>
+            <span>Version {{ skill.version }}</span>
+            <span>{{ skill.created_at }}</span>
+          </div>
         </div>
         <a class="secondary-action" href="{{ skill.href }}">Open Skill</a>
       </article>
