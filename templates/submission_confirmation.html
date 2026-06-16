@@ -4,26 +4,50 @@
   <section class="confirmation-card">
     <p class="eyebrow">Submission Complete</p>
     <h1>Your skill has been submitted successfully.</h1>
+
     <dl class="confirmation-list">
       <div>
         <dt>Skill name</dt>
         <dd>{{ skill.name }}</dd>
       </div>
       <div>
-        <dt>Author</dt>
-        <dd>{{ skill.author }}</dd>
+        <dt>Submission status</dt>
+        <dd>{{ skill.status }}</dd>
+      </div>
+      <div>
+        <dt>Uploaded file</dt>
+        <dd>{{ skill.uploaded_file_name }}</dd>
       </div>
       <div>
         <dt>Research type</dt>
         <dd>{{ skill.research_type }}</dd>
       </div>
-      <div>
-        <dt>Submitted status</dt>
-        <dd>{{ skill.status }}</dd>
-      </div>
     </dl>
+
     <section class="uploaded-files">
-      <h2>Uploaded files</h2>
+      <h2>Extracted metadata summary</h2>
+      <dl class="summary-list">
+        <div>
+          <dt>Description</dt>
+          <dd>{{ skill.description or "Not detected" }}</dd>
+        </div>
+        <div>
+          <dt>Author</dt>
+          <dd>{{ skill.author or "Not detected" }}</dd>
+        </div>
+        <div>
+          <dt>Version</dt>
+          <dd>{{ skill.version }}</dd>
+        </div>
+        <div>
+          <dt>License</dt>
+          <dd>{{ skill.license }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="uploaded-files">
+      <h2>Detected files</h2>
       {% if skill.files %}
         <div class="file-list">
           {% for file in skill.files %}
@@ -31,12 +55,13 @@
           {% endfor %}
         </div>
       {% else %}
-        <p>No files uploaded.</p>
+        <p>No files detected.</p>
       {% endif %}
     </section>
+
     <div class="card-actions">
-      <a class="primary-action" href="{{ url_for('library_skill_detail', skill_id=skill.id) }}">View Library Item</a>
-      <a class="secondary-action" href="{{ url_for('publish') }}">Submit Another Skill</a>
+      <a class="primary-action" href="{{ url_for('library') }}">Go to Skill Library</a>
+      <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id=skill.id) }}">View Skill Detail</a>
     </div>
   </section>
 {% endblock %}

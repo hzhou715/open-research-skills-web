@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -156,6 +157,17 @@ def save_upload(field: str, run_dir: Path, required: bool = True) -> Path | None
     return path
 
 
+def unique_folder(folder: Path) -> Path:
+    if not folder.exists():
+        return folder
+    counter = 2
+    while True:
+        candidate = folder.with_name(f"{folder.name}-{counter}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
 def safe_folder_name(name: str) -> str:
     cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", name.strip().lower()).strip("-")
     return cleaned or "submitted-skill"
@@ -187,25 +199,149 @@ def submitted_skill_folder(skill_name: str) -> tuple[str, Path]:
     return folder_name, folder
 
 
-def save_publish_files(folder: Path) -> list[dict[str, str]]:
-    saved_files: list[dict[str, str]] = []
-    upload_fields = [
-        "skill_md",
-        "sample_input_files",
-        "expected_output_files",
-        "reference_files",
-        "validation_report",
+def safe_extract_zip(zip_path: Path, destination: Path) -> None:
+    with zipfile.ZipFile(zip_path) as archive:
+        for member in archive.infolist():
+            member_path = destination / member.filename
+            if not member_path.resolve().is_relative_to(destination.resolve()):
+                raise ValueError("Uploaded zip contains an unsafe file path.")
+        archive.extractall(destination)
+
+
+def find_skill_md(folder: Path) -> Path | None:
+    for path in folder.rglob("*"):
+        if path.is_file() and path.name.lower() == "skill.md":
+            return path
+    return None
+
+
+def parse_front_matter(text: str) -> dict[str, str]:
+    if not text.startswith("---"):
+        return {}
+    match = re.match(r"^---\s*\n(.*?)\n---\s*", text, flags=re.DOTALL)
+    if not match:
+        return {}
+    metadata: dict[str, str] = {}
+    for line in match.group(1).splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        metadata[key.strip().lower()] = value.strip().strip("\"'")
+    return metadata
+
+
+def extract_heading_section(text: str, heading: str) -> str:
+    pattern = rf"^##\s+{re.escape(heading)}\s*$([\s\S]*?)(?=^##\s+|\Z)"
+    match = re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE)
+    if not match:
+        return ""
+    return re.sub(r"\s+", " ", match.group(1)).strip()
+
+
+def extract_skill_metadata(text: str) -> dict[str, str]:
+    front_matter = parse_front_matter(text)
+    title_match = re.search(r"^#\s+(.+)$", text, flags=re.MULTILINE)
+    purpose = extract_heading_section(text, "Purpose")
+    inputs = extract_heading_section(text, "Inputs")
+    outputs = extract_heading_section(text, "Outputs")
+    validation = extract_heading_section(text, "Validation")
+
+    metadata = {
+        "name": front_matter.get("name") or (title_match.group(1).strip() if title_match else ""),
+        "description": front_matter.get("description") or purpose,
+        "research_type": front_matter.get("research_type", ""),
+        "input_type": front_matter.get("required_inputs") or front_matter.get("inputs") or inputs,
+        "output_type": front_matter.get("expected_outputs") or front_matter.get("outputs") or outputs,
+        "validation_standard": front_matter.get("validation_standard") or validation,
+        "author": front_matter.get("author", ""),
+        "version": front_matter.get("version") or "0.1",
+        "license": front_matter.get("license") or "Not specified",
+        "purpose": purpose,
+        "procedure": extract_heading_section(text, "Procedure") or extract_heading_section(text, "Procedure Summary"),
+    }
+    return metadata
+
+
+def detect_package_files(folder: Path, skill_md_path: Path) -> dict[str, object]:
+    paths = [path for path in folder.rglob("*") if path.is_file()]
+    folder_names = {path.name.lower() for path in folder.rglob("*") if path.is_dir()}
+    file_names = [str(path.relative_to(folder)) for path in paths]
+    return {
+        "has_skill_md": skill_md_path.exists(),
+        "has_input": "input" in folder_names,
+        "has_references": "references" in folder_names,
+        "has_expected": "expected" in folder_names,
+        "has_output": "output" in folder_names,
+        "has_validation_report": any(path.name.lower() == "validation_report.md" for path in paths),
+        "files": file_names,
+    }
+
+
+def prepare_skill_package(uploaded) -> dict[str, object]:
+    if uploaded is None or uploaded.filename == "":
+        raise ValueError("No file is uploaded.")
+
+    original_filename = secure_filename(uploaded.filename)
+    suffix = Path(original_filename).suffix.lower()
+    if suffix not in {".zip", ".md"}:
+        raise ValueError("Uploaded file must be .zip or .md.")
+    if suffix == ".md" and original_filename.lower() != "skill.md":
+        raise ValueError("For .md uploads, the file must be named SKILL.md.")
+
+    staging_id = f"_staging-{uuid4().hex[:10]}"
+    staging_folder = SUBMITTED_SKILLS_UPLOAD_DIR / staging_id
+    staging_folder.mkdir(parents=True, exist_ok=True)
+    uploaded_path = staging_folder / original_filename
+    uploaded.save(uploaded_path)
+
+    extract_folder = staging_folder / "package"
+    extract_folder.mkdir(exist_ok=True)
+    if suffix == ".zip":
+        try:
+            safe_extract_zip(uploaded_path, extract_folder)
+        except zipfile.BadZipFile as exc:
+            raise ValueError("Uploaded zip file cannot be read.") from exc
+    else:
+        (extract_folder / "SKILL.md").write_bytes(uploaded_path.read_bytes())
+
+    skill_md_path = find_skill_md(extract_folder)
+    if skill_md_path is None:
+        raise ValueError("SKILL.md cannot be found in the uploaded package.")
+
+    try:
+        skill_text = skill_md_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("SKILL.md cannot be read as UTF-8 text.") from exc
+
+    metadata = extract_skill_metadata(skill_text)
+    detected = detect_package_files(extract_folder, skill_md_path)
+    return {
+        "staging_id": staging_id,
+        "uploaded_file_name": original_filename,
+        "metadata": metadata,
+        "detected": detected,
+    }
+
+
+def finalize_staged_skill(staging_id: str, skill_name: str) -> tuple[str, Path]:
+    if not re.fullmatch(r"_staging-[a-f0-9]{10}", staging_id):
+        raise ValueError("Uploaded package could not be found. Please upload again.")
+    staging_folder = SUBMITTED_SKILLS_UPLOAD_DIR / staging_id
+    if not staging_folder.exists():
+        raise ValueError("Uploaded package could not be found. Please upload again.")
+    destination = unique_folder(SUBMITTED_SKILLS_UPLOAD_DIR / safe_folder_name(skill_name))
+    staging_folder.rename(destination)
+    return destination.name, destination
+
+
+def files_for_skill(folder: Path) -> list[dict[str, str]]:
+    package_folder = folder / "package"
+    root = package_folder if package_folder.exists() else folder
+    return [
+        {"filename": str(path.relative_to(root))}
+        for path in root.rglob("*")
+        if path.is_file()
     ]
-    for field in upload_fields:
-        for uploaded in request.files.getlist(field):
-            if uploaded.filename == "":
-                continue
-            filename = secure_filename(uploaded.filename)
-            if not filename:
-                continue
-            uploaded.save(folder / filename)
-            saved_files.append({"field": field, "filename": filename})
-    return saved_files
 
 
 def load_contributed_skills() -> list[dict[str, str]]:
@@ -338,60 +474,62 @@ def validation():
 @app.route("/publish", methods=["GET", "POST"])
 def publish():
     if request.method == "POST":
-        form_data = request.form.to_dict()
-        name = form_data.get("name", "").strip()
-        description = form_data.get("description", "").strip()
-        skill_md = request.files.get("skill_md")
-        errors: dict[str, str] = {}
+        action = request.form.get("action", "preview")
+        if action == "preview":
+            try:
+                preview = prepare_skill_package(request.files.get("skill_package"))
+            except ValueError as exc:
+                return render_template("publish.html", error=str(exc), preview=None), 400
+            return render_template("publish.html", error=None, preview=preview)
+
+        staging_id = request.form.get("staging_id", "").strip()
+        uploaded_file_name = request.form.get("uploaded_file_name", "").strip()
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        research_type = request.form.get("research_type", "").strip()
+        input_type = request.form.get("input_type", "").strip()
+        output_type = request.form.get("output_type", "").strip()
+        validation_standard = request.form.get("validation_standard", "").strip()
+        author = request.form.get("author", "").strip()
+        version = request.form.get("version", "").strip() or "0.1"
+        license_name = request.form.get("license", "").strip() or "Not specified"
+        skill_status = request.form.get("skill_status", "Draft").strip() or "Draft"
+        visibility = request.form.get("visibility", "Private Draft").strip() or "Private Draft"
 
         if not name:
-            errors["name"] = "Skill Name is required."
-        if not description:
-            errors["description"] = "Short Description is required."
-        if skill_md is None or skill_md.filename == "":
-            errors["skill_md"] = "SKILL.md upload is required."
-        elif secure_filename(skill_md.filename).lower() != "skill.md":
-            errors["skill_md"] = "Upload a file named SKILL.md."
+            return render_template("publish.html", error="Skill name could not be detected. Please add it before submitting.", preview=None), 400
 
-        if errors:
-            return render_template("publish.html", errors=errors, form_data=form_data), 400
-
-        folder_name, folder = submitted_skill_folder(name)
-        files = save_publish_files(folder)
+        folder_name, folder = finalize_staged_skill(staging_id, name)
         submitted_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         skill = {
             "id": folder_name,
             "name": name,
             "description": description,
             "short_description": description,
-            "author": form_data.get("author", "").strip() or "Anonymous",
-            "institution": form_data.get("institution", "").strip(),
-            "contact_email": form_data.get("contact_email", "").strip(),
-            "related_paper_title": form_data.get("related_paper_title", "").strip(),
-            "doi_url": form_data.get("doi_url", "").strip(),
-            "research_type": form_data.get("research_type", "").strip() or "Contributed Skill",
-            "purpose": form_data.get("purpose", "").strip(),
-            "input_type": form_data.get("required_inputs", "").strip() or "User-defined inputs",
-            "output_type": form_data.get("expected_outputs", "").strip() or "User-defined outputs",
-            "procedure": form_data.get("procedure_summary", "").strip(),
-            "decision_rules": form_data.get("decision_rules", "").strip(),
-            "validation_standard": form_data.get("validation_standard", "").strip(),
-            "known_limitations": form_data.get("known_limitations", "").strip(),
-            "validation_status": form_data.get("skill_status", "Draft"),
-            "visibility": form_data.get("visibility", "Private Draft"),
-            "status": form_data.get("skill_status", "Draft"),
-            "version": "0.1",
+            "author": author or "Anonymous",
+            "research_type": research_type or "Contributed Skill",
+            "purpose": request.form.get("purpose", "").strip() or description,
+            "input_type": input_type or "User-defined inputs",
+            "output_type": output_type or "User-defined outputs",
+            "procedure": request.form.get("procedure", "").strip(),
+            "validation_standard": validation_standard or "Not specified",
+            "validation_status": skill_status,
+            "visibility": visibility,
+            "status": skill_status,
+            "version": version,
+            "license": license_name,
+            "uploaded_file_name": uploaded_file_name,
             "created_at": submitted_at,
             "submitted_at": submitted_at,
             "folder": folder_name,
-            "files": files,
+            "files": files_for_skill(folder),
         }
         skills = load_submitted_skills()
         skills.insert(0, skill)
         save_submitted_skills(skills)
         return redirect(url_for("submission_confirmation", skill_id=folder_name))
 
-    return render_template("publish.html", errors={}, form_data={})
+    return render_template("publish.html", error=None, preview=None)
 
 
 @app.route("/publish/confirmation/<skill_id>")
@@ -473,18 +611,19 @@ def download_skill_package(skill_id: str):
     )
 
 
-@app.route("/skills/contributed/<skill_id>/files/<filename>")
+@app.route("/skills/contributed/<skill_id>/files/<path:filename>")
 def skill_file(skill_id: str, filename: str):
     safe_skill_id = secure_filename(skill_id)
-    safe_filename = secure_filename(filename)
-    return send_from_directory(SKILL_DIR / safe_skill_id / "files", safe_filename, as_attachment=True)
+    return send_from_directory(SKILL_DIR / safe_skill_id / "files", filename, as_attachment=True)
 
 
-@app.route("/uploads/submitted_skills/<skill_id>/<filename>")
+@app.route("/uploads/submitted_skills/<skill_id>/<path:filename>")
 def submitted_skill_file(skill_id: str, filename: str):
     safe_skill_id = secure_filename(skill_id)
-    safe_filename = secure_filename(filename)
-    return send_from_directory(SUBMITTED_SKILLS_UPLOAD_DIR / safe_skill_id, safe_filename, as_attachment=True)
+    folder = SUBMITTED_SKILLS_UPLOAD_DIR / safe_skill_id
+    package_folder = folder / "package"
+    base = package_folder if package_folder.exists() else folder
+    return send_from_directory(base, filename, as_attachment=True)
 
 
 @app.route("/videos")
