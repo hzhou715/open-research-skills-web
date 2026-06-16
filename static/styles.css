@@ -1055,6 +1055,199 @@ a {
   padding-left: 18px;
 }
 
+.account-hero {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.account-hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.04;
+}
+
+.account-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.account-profile-card,
+.account-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.account-profile-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.avatar {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--soft);
+  font-weight: 800;
+}
+
+.account-profile-card h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.account-profile-card p {
+  margin: -10px 0 0;
+  color: var(--muted);
+}
+
+.account-profile-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.account-profile-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-profile-card dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.account-profile-card dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 750;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-actions button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.account-main {
+  display: grid;
+  gap: 16px;
+}
+
+.account-card {
+  padding: 20px;
+}
+
+.account-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.account-card h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.account-list {
+  display: grid;
+  gap: 10px;
+}
+
+.account-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.account-list h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.account-list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.account-table-wrap {
+  overflow-x: auto;
+}
+
+.account-table {
+  min-width: 620px;
+}
+
+.account-table th,
+.account-table td {
+  text-align: left;
+}
+
+.small-card {
+  display: grid;
+  gap: 12px;
+}
+
+.compact-activity {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.settings-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-links a {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.settings-links a:hover {
+  background: var(--soft);
+}
+
 .status-invalidated {
   background: #fff0ed;
   color: #a33822;
@@ -1324,6 +1517,7 @@ th {
 
   .module-layout,
   .publish-layout-full,
+  .account-layout,
   .library-controls,
   .filter-panel,
   .detail-hero,
@@ -1366,5 +1560,18 @@ th {
 
   .library-search-row {
     grid-template-columns: 1fr;
+  }
+
+  .account-list article {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .account-profile-card dl div {
+    display: grid;
+  }
+
+  .account-profile-card dd {
+    text-align: left;
   }
 }

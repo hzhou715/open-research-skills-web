@@ -1,30 +1,131 @@
 {% extends "base.html" %}
-{% block title %}Account{% endblock %}
+{% block title %}My Account{% endblock %}
 {% block content %}
-  <section class="section-heading">
-    <p class="eyebrow">Module 5</p>
-    <h1>User Account Management</h1>
-    <p>Profile, role, and saved-run management.</p>
+  <section class="account-hero">
+    <h1>My Account</h1>
+    <p>Manage your profile, skills, validations, and activity.</p>
   </section>
-  <div class="module-layout account-layout">
-    <aside class="module-sidebar account-sidebar">
-      <span>Current Session</span>
-      <strong>Guest user</strong>
-      <p>Authentication can be added after the workflow is stable.</p>
+
+  <section class="account-layout">
+    <aside class="account-profile-card">
+      <div class="avatar">DU</div>
+      <h2>Demo User</h2>
+      <p>Contributor</p>
+      <dl>
+        <div>
+          <dt>Institution</dt>
+          <dd>Open Research Skills Team</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>demo@example.com</dd>
+        </div>
+        <div>
+          <dt>Joined</dt>
+          <dd>2026</dd>
+        </div>
+        <div>
+          <dt>Skills contributed</dt>
+          <dd>3</dd>
+        </div>
+        <div>
+          <dt>Validations completed</dt>
+          <dd>2</dd>
+        </div>
+      </dl>
+      <div class="profile-actions">
+        <button type="button">Edit Profile</button>
+        <a class="secondary-action" href="#">Sign Out</a>
+      </div>
     </aside>
-    <section class="card-grid">
-      <article class="panel">
-        <h2>Profile</h2>
-        <p>Name, affiliation, and contact details.</p>
-      </article>
-      <article class="panel">
-        <h2>Roles</h2>
-        <p>Contributor, reviewer, and administrator access.</p>
-      </article>
-      <article class="panel">
-        <h2>Saved Runs</h2>
-        <p>Recent analyses and generated reports.</p>
-      </article>
-    </section>
-  </div>
+
+    <div class="account-main">
+      <section class="account-card">
+        <div class="account-card-header">
+          <h2>My Skills</h2>
+          <a class="text-action" href="{{ url_for('publish') }}">Publish</a>
+        </div>
+        <div class="account-list">
+          <article>
+            <div>
+              <h3>NPV-DCF Analysis</h3>
+              <p>Version 1.0 · Today</p>
+            </div>
+            <span class="badge status-validated">Validated</span>
+            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='npv-dcf') }}">Manage</a>
+          </article>
+          <article>
+            <div>
+              <h3>Bidding Collusion Document Coding</h3>
+              <p>Version 0.1 · This week</p>
+            </div>
+            <span class="badge status-tested">Tested</span>
+            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='bidding-collusion-coding') }}">Manage</a>
+          </article>
+          <article>
+            <div>
+              <h3>Literature Screening and Theme Coding</h3>
+              <p>Version 0.1 · This month</p>
+            </div>
+            <span class="badge status-draft">Draft</span>
+            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='literature-screening-theme-coding') }}">Manage</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="account-card">
+        <div class="account-card-header">
+          <h2>My Validation Results</h2>
+          <a class="text-action" href="{{ url_for('validation') }}">Run Validation</a>
+        </div>
+        <div class="account-table-wrap">
+          <table class="account-table">
+            <thead>
+              <tr>
+                <th>Skill</th>
+                <th>Source</th>
+                <th>Result</th>
+                <th>Level</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>NPV-DCF Analysis</td>
+                <td>Expected Results</td>
+                <td><span class="badge status-validated">Validated</span></td>
+                <td>Level 3</td>
+                <td>Today</td>
+              </tr>
+              <tr>
+                <td>Bidding Collusion Coding</td>
+                <td>Expert Baseline</td>
+                <td><span class="badge status-needs-review">Needs Review</span></td>
+                <td>Level 2</td>
+                <td>This week</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="account-card small-card">
+        <h2>My Comments</h2>
+        <ul class="compact-activity">
+          <li>Commented on NPV-DCF Analysis</li>
+          <li>Suggested clearer validation threshold</li>
+        </ul>
+      </section>
+
+      <section class="account-card small-card">
+        <h2>Account Settings</h2>
+        <div class="settings-links">
+          <a href="#">Profile</a>
+          <a href="#">Notifications</a>
+          <a href="#">Privacy</a>
+          <a href="#">API / Agent Access</a>
+        </div>
+      </section>
+    </div>
+  </section>
 {% endblock %}
